@@ -1,4 +1,3 @@
 [submodule "app"]
 	path = app
 	url = https://github.com/modxcms/revolution
-	branch = 3.x
