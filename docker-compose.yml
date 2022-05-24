@@ -10,7 +10,6 @@ services:
     volumes:
       # app
       - ./app:/usr/share/nginx/html
-      #- ./app:/www
       # nginx configs
       - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./docker/nginx/conf.d/:/etc/nginx/conf.d/:ro
@@ -22,15 +21,32 @@ services:
 
   # php-fpm
   php-fpm:
-    build: ./docker/php-fpm
+    build:
+      context: .
+      dockerfile: ./docker/php-fpm/Dockerfile
     ports:
       - "9000"
     volumes:
       - ./app:/usr/share/nginx/html
-      - ./app:/www
       - ./docker/php-fpm/php.ini:/usr/local/etc/php/php.ini:ro
       # logs
       - ./log/php-fpm:/var/log/php-fpm
+
+  # php-cli
+  php-cli:
+    build:
+      context: .
+      dockerfile: ./docker/php-cli/Dockerfile
+    volumes:
+      - ./app:/usr/share/nginx/html
+      - ./config.xml:/usr/share/nginx/html/config.xml
+    command: sh -c "composer install && \
+                    cd _build && \
+                    cp build.config.sample.php build.config.php && \
+                    cp build.properties.sample.php build.properties.php && \
+                    php transport.core.php && \
+                    cd ../setup && \
+                    php index.php --installmode=new --config=/usr/share/nginx/html/config.xml"
 
   # database
   mysql:
@@ -43,6 +59,9 @@ services:
       - ./docker/mysql/data:/var/lib/mysql
       - ./docker/mysql/conf.d:/etc/mysql/conf.d
     environment:
+      - MYSQL_DATABASE=modx
+      - MYSQL_USER=modx
+      - MYSQL_PASSWORD=modx
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-your_mysql_password}
 
   pma:
